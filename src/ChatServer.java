@@ -34,7 +34,7 @@ public class ChatServer {
     private static final String CHAT_HTML;
     static {
         try {
-            CHAT_HTML = getFileAsString("../index.html");
+            CHAT_HTML = getFileAsString("index.html"); //changed directory from ../index.html
         } catch (final IOException xx) {
             throw new Error("unable to start server", xx);
         }
@@ -81,15 +81,16 @@ public class ChatServer {
             Matcher m;
             if (request == null) {
                 sendResponse(xo, NOT_FOUND, TEXT, "Empty request.");
-            } else if (PAGE_REQUEST.matcher(request).matches()) {
+            } else if (PAGE_REQUEST.matcher(request).matches()) { //Load html page
                 sendResponse(xo, OK, HTML, CHAT_HTML);
-            } else if ((m = PULL_REQUEST.matcher(request)).matches()) {
+            } else if ((m = PULL_REQUEST.matcher(request)).matches()) { //Display most recent messages
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final long last = Long.valueOf(m.group(2));
                 sendResponse(xo, OK, TEXT, getState(room).recentMessages(last));
-            } else if ((m = PUSH_REQUEST.matcher(request)).matches()) {
+            } else if ((m = PUSH_REQUEST.matcher(request)).matches()) { //Display a message to room
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final String msg = m.group(2);
+                System.out.println("Message to post: " + msg);
                 getState(room).addMessage(msg);
                 sendResponse(xo, OK, TEXT, "ack");
             } else {

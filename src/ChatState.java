@@ -1,8 +1,13 @@
 // ChatState
+/*
+Implementation Plan:
+
+ */
 
 import java.util.LinkedList;
 
 public class ChatState {
+
     private static final int MAX_HISTORY = 32;
 
     private final String name;
