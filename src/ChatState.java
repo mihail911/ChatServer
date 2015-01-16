@@ -1,7 +1,9 @@
 // ChatState
 /*
 Implementation Plan:
-
+1) Queue of available threads? (make sure to make queue thread-safe) <-- Threadpool
+2) Implement new thread (inner?) class --> what should its 'run' method do
+3) Notify() or NotifyAll() within 'addMessage'
  */
 
 import java.util.LinkedList;
@@ -13,6 +15,8 @@ public class ChatState {
     private final String name;
     private final LinkedList<String> history = new LinkedList<String>();
     private long lastID = System.currentTimeMillis();
+
+    //Initialize ThreadPool
 
     public ChatState(final String name) {
         this.name = name;
@@ -63,7 +67,7 @@ public class ChatState {
      * This method checks to see if there are new messages in the chat
      * room. If yes, then it returns immediately with those
      * messages. If no, then it waits up to 15 seconds for new
-     * messages for new messages to arrive, and then returns.
+     * messages to arrive, and then returns.
      *
      * TODO: The starter code uses <code>Thread.sleep()</code> to wait
      * 15 seconds for new messages. Change this to use proper
