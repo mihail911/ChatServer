@@ -1,5 +1,7 @@
 // ChatServer
 
+import sun.plugin2.message.CustomSecurityManagerAckMessage;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,10 +14,43 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.lang.Thread;
+import java.util.LinkedList;
+import java.lang.Object;
+import java.util.concurrent.locks.Lock;
 
 public class ChatServer {
+    class Worker extends Thread{
+        //run method for worker thread
+        public void run(){
+           while(true){
+               try{
+                   Socket newConnection = null;
+                   synchronized(connections){
+                    if(connections.size() == 0) wait();
+                    newConnection = connections.poll(); //might return null
+                   }
+                   try{
+                       if (newConnection != null) handle(newConnection);
+                   }catch(IOException e){
+                       //Do something here
+                   }
+               }catch(InterruptedException e) {
+                //do something if fails
+               }
+           }
+        }
+
+    }
+    private static final int numWorkers = 8;
+    private Semaphore workersSemaphor = new Semaphore(numWorkers);
+    private LinkedList<Thread> availableWorkers = new LinkedList<Thread>();
+    private LinkedList<Socket> connections = new LinkedList<Socket>();
+
     private static final Charset utf8 = Charset.forName("UTF-8");
 
     private static final String OK = "200 OK";
@@ -32,6 +67,7 @@ public class ChatServer {
         = Pattern.compile("POST /([\\p{Alnum}]*)/?push\\?msg=([^ ]*) HTTP.*");
 
     private static final String CHAT_HTML;
+
     static {
         try {
             CHAT_HTML = getFileAsString("index.html"); //changed directory from ../index.html
@@ -53,12 +89,22 @@ public class ChatServer {
         this.port = port;
     }
 
+    void initWorkers(){
+        for(int i =0; i< numWorkers; i++){
+            Thread worker = new Thread();
+            worker.start();
+            availableWorkers.add(worker);
+        }
+    }
     public void runForever() throws IOException {
         @SuppressWarnings("resource")
 		final ServerSocket server = new ServerSocket(port);
         while (true) {
             final Socket connection = server.accept();
-            handle(connection);
+            synchronized(connections) {
+                connections.add(connection);
+                notify();
+            }
         }
     }
     
@@ -146,6 +192,8 @@ public class ChatServer {
      */
     public static void main(final String[] args) throws IOException {
         final int port = args.length == 0 ? 8080 : Integer.parseInt(args[0]);
-        new ChatServer(port).runForever();
+        ChatServer server = new ChatServer(port);
+        server.initWorkers();
+        server.runForever();
     }
 }
