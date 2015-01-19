@@ -44,13 +44,12 @@ public class ChatState {
      */
     public void addMessage(final String msg) {
         synchronized(history) {
-            //history.notify()
             history.addLast(msg);
             ++lastID;
             if (history.size() > MAX_HISTORY) {
                 history.removeFirst();
             }
-            history.notify();
+            history.notifyAll();
         }
 
     }
@@ -87,7 +86,6 @@ public class ChatState {
         synchronized(history){
             count = messagesToSend(mostRecentSeenID);
             if (count == 0) {
-                // TODO: Do not use Thread.sleep() here!
                 try {
                     history.wait(15000);
                 } catch (final InterruptedException xx) {
