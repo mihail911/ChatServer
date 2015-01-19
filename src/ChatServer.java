@@ -27,20 +27,30 @@ public class ChatServer {
     class Worker extends Thread{
         //run method for worker thread
         public void run(){
+            //System.out.println("running method of thread");
            while(true){
+               Socket newConnection = null;
+               //System.out.println("Here?");
                try{
-                   Socket newConnection = null;
+
                    synchronized(connections){
-                    if(connections.size() == 0) wait();
+                    if(connections.size() == 0)
+                    {
+                        //System.out.println("We are here!");
+                        connections.wait();
+                    }
                     newConnection = connections.poll(); //might return null
                    }
                    try{
                        if (newConnection != null) handle(newConnection);
                    }catch(IOException e){
-                       //Do something here
+                       System.out.println("Couldn't read stream. Throwing IO Exception");
                    }
                }catch(InterruptedException e) {
-                //do something if fails
+                   System.out.println("Something went wrong with thread. Throwing Interrupted Exception");
+                   synchronized(connections){ //Make sure this is what we want to do
+                       connections.addFirst(newConnection);
+                   }
                }
            }
         }
@@ -91,9 +101,10 @@ public class ChatServer {
 
     void initWorkers(){
         for(int i =0; i< numWorkers; i++){
-            Thread worker = new Thread();
+            Worker worker = new Worker();
             worker.start();
             availableWorkers.add(worker);
+            //System.out.println("Adding worker: " + i);
         }
     }
     public void runForever() throws IOException {
@@ -102,8 +113,11 @@ public class ChatServer {
         while (true) {
             final Socket connection = server.accept();
             synchronized(connections) {
+                //System.out.println("adding connection'");
                 connections.add(connection);
-                notify();
+                connections.notify();
+                //System.out.println("Connection size" + connections.size());
+                //System.out.println("notifying");
             }
         }
     }
@@ -116,6 +130,8 @@ public class ChatServer {
     }
 
     private void handle(final Socket connection) throws IOException {
+        //System.out.println("Handling something");
+        //System.out.println("Handling something");
         try {
             final BufferedReader xi
                 = new BufferedReader(new InputStreamReader(connection.getInputStream()));
