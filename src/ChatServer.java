@@ -41,14 +41,14 @@ public class ChatServer {
                    try{
                        if (newConnection != null) handle(newConnection);
                    }catch(IOException e){
-                       System.out.println("Couldn't read stream. Throwing IO Exception");
+                       System.out.println("Couldn't read stream. Throwing IO Exception.");
                        synchronized(connections){
                            connections.addFirst(newConnection);
                        }
                    }
 
                }catch(InterruptedException e) {
-                   System.out.println("Thread failed. Throwing Interrupted Exception");
+                   System.out.println("Thread failed. Throwing Interrupted Exception.");
                    synchronized(connections){
                        connections.addFirst(newConnection);
                    }
@@ -111,7 +111,6 @@ public class ChatServer {
 		final ServerSocket server = new ServerSocket(port);
         while (true) {
             final Socket connection = server.accept();
-            System.out.println("New connection" + connection);
             synchronized(connections) {
                 connections.add(connection);
                 connections.notifyAll();

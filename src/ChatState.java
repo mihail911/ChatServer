@@ -97,12 +97,12 @@ public class ChatState {
             // If count == 1, then id should be lastID on the first
             // iteration.
            id = lastID - count + 1;
+           for (String msg: history.subList(history.size() - count, history.size())) {
+               buf.append(id).append(": ").append(msg).append('\n');
+               ++id;
+           }
         }
 
-        for (String msg: history.subList(history.size() - count, history.size())) {
-            buf.append(id).append(": ").append(msg).append('\n');
-            ++id;
-        }
         return buf.toString();
     }
 }
