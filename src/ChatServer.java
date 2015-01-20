@@ -27,16 +27,13 @@ public class ChatServer {
     class Worker extends Thread{
         //run method for worker thread
         public void run(){
-            //System.out.println("running method of thread");
            while(true){
                Socket newConnection = null;
-               //System.out.println("Here?");
                try{
 
                    synchronized(connections){
                     if(connections.size() == 0)
                     {
-                        //System.out.println("We are here!");
                         connections.wait();
                     }
                     newConnection = connections.poll(); //might return null
@@ -45,10 +42,14 @@ public class ChatServer {
                        if (newConnection != null) handle(newConnection);
                    }catch(IOException e){
                        System.out.println("Couldn't read stream. Throwing IO Exception");
+                       synchronized(connections){
+                           connections.addFirst(newConnection);
+                       }
                    }
+
                }catch(InterruptedException e) {
-                   System.out.println("Something went wrong with thread. Throwing Interrupted Exception");
-                   synchronized(connections){ //Make sure this is what we want to do
+                   System.out.println("Thread failed. Throwing Interrupted Exception");
+                   synchronized(connections){
                        connections.addFirst(newConnection);
                    }
                }
@@ -57,7 +58,6 @@ public class ChatServer {
 
     }
     private static final int numWorkers = 8;
-    private Semaphore workersSemaphor = new Semaphore(numWorkers);
     private LinkedList<Thread> availableWorkers = new LinkedList<Thread>();
     private LinkedList<Socket> connections = new LinkedList<Socket>();
 
@@ -104,7 +104,6 @@ public class ChatServer {
             Worker worker = new Worker();
             worker.start();
             availableWorkers.add(worker);
-            //System.out.println("Adding worker: " + i);
         }
     }
     public void runForever() throws IOException {
@@ -112,12 +111,10 @@ public class ChatServer {
 		final ServerSocket server = new ServerSocket(port);
         while (true) {
             final Socket connection = server.accept();
+            System.out.println("New connection" + connection);
             synchronized(connections) {
-                //System.out.println("adding connection'");
                 connections.add(connection);
-                connections.notify();
-                //System.out.println("Connection size" + connections.size());
-                //System.out.println("notifying");
+                connections.notifyAll();
             }
         }
     }
@@ -130,8 +127,6 @@ public class ChatServer {
     }
 
     private void handle(final Socket connection) throws IOException {
-        //System.out.println("Handling something");
-        //System.out.println("Handling something");
         try {
             final BufferedReader xi
                 = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -152,7 +147,6 @@ public class ChatServer {
             } else if ((m = PUSH_REQUEST.matcher(request)).matches()) { //Display a message to room
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final String msg = m.group(2);
-                System.out.println("Message to post: " + msg);
                 getState(room).addMessage(msg);
                 sendResponse(xo, OK, TEXT, "ack");
             } else {
