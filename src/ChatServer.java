@@ -1,6 +1,6 @@
 // ChatServer
 
-import sun.plugin2.message.CustomSecurityManagerAckMessage;
+//import sun.plugin2.message.CustomSecurityManagerAckMessage;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -80,7 +80,7 @@ public class ChatServer {
 
     static {
         try {
-            CHAT_HTML = getFileAsString("index.html"); //changed directory from ../index.html
+            CHAT_HTML = getFileAsString("../index.html"); //changed directory from ../index.html
         } catch (final IOException xx) {
             throw new Error("unable to start server", xx);
         }
@@ -89,6 +89,7 @@ public class ChatServer {
     private final int port;
     private final Map<String,ChatState> stateByName
         = new HashMap<String,ChatState>();
+    private static String allRoom = "all";
 
     /**
      * Constructs a new {@link ChatServer} that will service requests
@@ -143,10 +144,16 @@ public class ChatServer {
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final long last = Long.valueOf(m.group(2));
                 sendResponse(xo, OK, TEXT, getState(room).recentMessages(last));
+                synchronized(allRoom) {
+                    sendResponse(xo, OK, TEXT, getState(allRoom).recentMessages(last));
+                }
             } else if ((m = PUSH_REQUEST.matcher(request)).matches()) { //Display a message to room
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final String msg = m.group(2);
                 getState(room).addMessage(msg);
+                synchronized(allRoom) {
+                    getState(allRoom).addMessage(msg);
+                }
                 sendResponse(xo, OK, TEXT, "ack");
             } else {
                 sendResponse(xo, NOT_FOUND, TEXT, "Malformed request.");
@@ -202,6 +209,7 @@ public class ChatServer {
     public static void main(final String[] args) throws IOException {
         final int port = args.length == 0 ? 8080 : Integer.parseInt(args[0]);
         ChatServer server = new ChatServer(port);
+        server.getState(allRoom);
         server.initWorkers();
         server.runForever();
     }
