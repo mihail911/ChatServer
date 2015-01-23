@@ -144,15 +144,21 @@ public class ChatServer {
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final long last = Long.valueOf(m.group(2));
                 sendResponse(xo, OK, TEXT, getState(room).recentMessages(last));
-                synchronized(allRoom) {
-                    sendResponse(xo, OK, TEXT, getState(allRoom).recentMessages(last));
-                }
             } else if ((m = PUSH_REQUEST.matcher(request)).matches()) { //Display a message to room
                 String room = replaceEmptyWithDefaultRoom(m.group(1));
                 final String msg = m.group(2);
-                getState(room).addMessage(msg);
-                synchronized(allRoom) {
-                    getState(allRoom).addMessage(msg);
+                if (room.equals(allRoom)) {
+                    synchronized(stateByName) {
+                        for (Map.Entry<String,ChatState> entry : stateByName.entrySet()) {
+                            stateByName.get(entry.getKey()).addMessage(msg);
+                        }
+                    }
+                }
+                else {
+                    getState(room).addMessage(msg);
+                    synchronized(stateByName) {
+                        getState(allRoom).addMessage(msg);
+                    }
                 }
                 sendResponse(xo, OK, TEXT, "ack");
             } else {
