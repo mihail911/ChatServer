@@ -1,10 +1,4 @@
 // ChatState
-/*
-Implementation Plan:
-1) Queue of available threads? (make sure to make queue thread-safe) <-- Threadpool
-2) Implement new thread (inner?) class --> what should its 'run' method do
-3) Notify() or NotifyAll() within 'addMessage'
- */
 
 import java.util.LinkedList;
 
